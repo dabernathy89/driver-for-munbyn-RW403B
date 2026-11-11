@@ -1,0 +1,55 @@
+*PPD-Adobe: "4.3"
+*% SPDX-License-Identifier: MIT
+*FormatVersion: "4.3"
+*FileVersion: "0.1.0"
+*LanguageEncoding: ISOLatin1
+*LanguageVersion: English
+*PCFileName: "RW403BLE.PPD"
+*Manufacturer: "MUNBYN"
+*Product: "(RW403B)"
+*ModelName: "MUNBYN RW403B Bluetooth LE"
+*ShortNickName: "RW403B Bluetooth"
+*NickName: "MUNBYN RW403B Bluetooth LE (open source)"
+*PSVersion: "(3010.000) 0"
+*LanguageLevel: "3"
+*ColorDevice: False
+*DefaultColorSpace: Gray
+*FileSystem: False
+*Throughput: "1"
+*LandscapeOrientation: Plus90
+*VariablePaperSize: False
+*TTRasterizer: Type42
+*cupsVersion: 2.3
+*cupsManualCopies: True
+*cupsFilter: "application/vnd.cups-raster 0 -"
+*OpenUI *PageSize/Label size: PickOne
+*OrderDependency: 10 AnySetup *PageSize
+*DefaultPageSize: Label4x6
+*PageSize Label4x6/4 x 6 inches: "<</PageSize[288 432]/ImagingBBox null>>setpagedevice"
+*PageSize Label100x150/100 x 150 mm: "<</PageSize[283.464567 425.196850]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageSize
+*OpenUI *PageRegion/Label size: PickOne
+*OrderDependency: 10 AnySetup *PageRegion
+*DefaultPageRegion: Label4x6
+*PageRegion Label4x6/4 x 6 inches: "<</PageSize[288 432]/ImagingBBox null>>setpagedevice"
+*PageRegion Label100x150/100 x 150 mm: "<</PageSize[283.464567 425.196850]/ImagingBBox null>>setpagedevice"
+*CloseUI: *PageRegion
+*DefaultImageableArea: Label4x6
+*ImageableArea Label4x6: "0 0 288 432"
+*ImageableArea Label100x150: "0 0 283.464567 425.196850"
+*DefaultPaperDimension: Label4x6
+*PaperDimension Label4x6: "288 432"
+*PaperDimension Label100x150: "283.464567 425.196850"
+*HWMargins: 0 0 0 0
+*OpenUI *Resolution/Resolution: PickOne
+*OrderDependency: 20 AnySetup *Resolution
+*DefaultResolution: 203dpi
+*Resolution 203dpi/203 dpi: "<</HWResolution[203 203]>>setpagedevice"
+*CloseUI: *Resolution
+*OpenUI *ColorModel/Color: PickOne
+*OrderDependency: 30 AnySetup *ColorModel
+*DefaultColorModel: Gray
+*ColorModel Gray/Grayscale: "<</cupsColorSpace 18/cupsBitsPerColor 8/cupsBitsPerPixel 8/cupsColorOrder 0>>setpagedevice"
+*CloseUI: *ColorModel
+*DefaultFont: Courier
+*Font Courier: Standard "(1.05)" Standard ROM
