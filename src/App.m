@@ -22,51 +22,44 @@ static BOOL receiveBytes(int fd,void *bytes,size_t length) {
     return pos==length;
 }
 @interface RWApp : NSObject <NSApplicationDelegate,CBCentralManagerDelegate>
-@property NSStatusItem *item;
-@property NSMenuItem *status;
 @property CBCentralManager *permissionManager;
 @property NSString *socketPath;
 @property int listener;
 @property BOOL printing;
 @end
 @implementation RWApp
-- (void)updateStatus:(NSString *)text {
-    self.status.title=text;
+- (void)recordStatus:(NSString *)text {
     fprintf(stderr,"%s %s\n",NSDate.date.description.UTF8String,text.UTF8String);fflush(stderr);
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
     self.listener=-1;
-    self.item=[NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];self.item.button.title=@"RW403B";
-    NSMenu *menu=[NSMenu new];self.status=[[NSMenuItem alloc] initWithTitle:@"Starting" action:nil keyEquivalent:@""];[menu addItem:self.status];
-    [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *log=[[NSMenuItem alloc] initWithTitle:@"Open log" action:@selector(openLog:) keyEquivalent:@""];log.target=self;[menu addItem:log];
-    NSMenuItem *quit=[[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@""];quit.target=NSApp;[menu addItem:quit];self.item.menu=menu;
+    [self recordStatus:@"Starting"];
     self.socketPath=@RW_SOCKET_PATH;
     NSString *directory=self.socketPath.stringByDeletingLastPathComponent;
     struct stat st;
     if(getuid()!=RW_USER_ID || (lstat(directory.fileSystemRepresentation,&st) && mkdir(directory.fileSystemRepresentation,0700))) {
-        [self updateStatus:@"Cannot create private print socket"];return;
+        [self recordStatus:@"Cannot create private print socket"];return;
     }
-    if(lstat(directory.fileSystemRepresentation,&st) || !S_ISDIR(st.st_mode) || st.st_uid!=getuid() || (st.st_mode&077)) {[self updateStatus:@"Print socket directory permissions are invalid"];return;}
+    if(lstat(directory.fileSystemRepresentation,&st) || !S_ISDIR(st.st_mode) || st.st_uid!=getuid() || (st.st_mode&077)) {[self recordStatus:@"Print socket directory permissions are invalid"];return;}
     struct sockaddr_un address={0};address.sun_family=AF_UNIX;
-    if(strlen(self.socketPath.fileSystemRepresentation)>=sizeof address.sun_path) {[self updateStatus:@"Print socket path is too long"];return;}
+    if(strlen(self.socketPath.fileSystemRepresentation)>=sizeof address.sun_path) {[self recordStatus:@"Print socket path is too long"];return;}
     strlcpy(address.sun_path,self.socketPath.fileSystemRepresentation,sizeof address.sun_path);
     // Do not replace a live owner. A stale socket from a stopped app is safe to remove.
     int probe=socket(AF_UNIX,SOCK_STREAM,0);
     if(connect(probe,(struct sockaddr *)&address,sizeof address)==0) {close(probe);[NSApp terminate:nil];return;}close(probe);
-    if(lstat(address.sun_path,&st)==0 && (!S_ISSOCK(st.st_mode) || st.st_uid!=getuid())) {[self updateStatus:@"Unexpected file at print socket path"];return;}
+    if(lstat(address.sun_path,&st)==0 && (!S_ISSOCK(st.st_mode) || st.st_uid!=getuid())) {[self recordStatus:@"Unexpected file at print socket path"];return;}
     unlink(address.sun_path);self.listener=socket(AF_UNIX,SOCK_STREAM,0);umask(0077);
-    if(self.listener<0 || bind(self.listener,(struct sockaddr *)&address,sizeof address) || listen(self.listener,4)) {[self updateStatus:@"Cannot listen for print jobs"];return;}
+    if(self.listener<0 || bind(self.listener,(struct sockaddr *)&address,sizeof address) || listen(self.listener,4)) {[self recordStatus:@"Cannot listen for print jobs"];return;}
     chmod(address.sun_path,0600);
     self.permissionManager=[[CBCentralManager alloc] initWithDelegate:self queue:dispatch_get_main_queue()];
-    [self updateStatus:@"Waiting for Bluetooth permission"];
+    [self recordStatus:@"Waiting for Bluetooth permission"];
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_UTILITY,0),^{[self acceptJobs];});
 }
 - (void)centralManagerDidUpdateState:(CBCentralManager *)central {
     if(self.printing) return;
-    if(central.state==CBManagerStatePoweredOn) [self updateStatus:@"Ready"];
-    else if(central.state==CBManagerStateUnauthorized) [self updateStatus:@"Bluetooth permission required"];
-    else if(central.state==CBManagerStatePoweredOff) [self updateStatus:@"Bluetooth is turned off"];
+    if(central.state==CBManagerStatePoweredOn) [self recordStatus:@"Ready"];
+    else if(central.state==CBManagerStateUnauthorized) [self recordStatus:@"Bluetooth permission required"];
+    else if(central.state==CBManagerStatePoweredOff) [self recordStatus:@"Bluetooth is turned off"];
 }
 - (void)acceptJobs {
     for(;;) {@autoreleasepool {
@@ -95,22 +88,19 @@ static BOOL receiveBytes(int fd,void *bytes,size_t length) {
         // Keep the main dispatch queue free for CoreBluetooth callbacks and timers.
         // The serialized worker waits for completion; it must not run RWTransmit
         // inside a main-queue block and then try to reenter that same queue.
-        dispatch_sync(dispatch_get_main_queue(),^{self.printing=YES;[self updateStatus:@"Validating print job"];});
+        dispatch_sync(dispatch_get_main_queue(),^{self.printing=YES;[self recordStatus:@"Validating print job"];});
         NSString *error=nil;NSArray *pages=RWReadRasterData(data,copies,&error);
         int result=CUPS_BACKEND_CANCEL;
-        if(!pages) dispatch_sync(dispatch_get_main_queue(),^{[self updateStatus:[@"Rejected: " stringByAppendingString:error?:@"invalid raster"]];});
+        if(!pages) dispatch_sync(dispatch_get_main_queue(),^{[self recordStatus:[@"Rejected: " stringByAppendingString:error?:@"invalid raster"]];});
         else {
-            dispatch_sync(dispatch_get_main_queue(),^{[self updateStatus:@"Printing"];});
+            dispatch_sync(dispatch_get_main_queue(),^{[self recordStatus:@"Printing"];});
             result=RWTransmit(@RW_UUID,@RW_MAC,pages,NO);
-            dispatch_sync(dispatch_get_main_queue(),^{[self updateStatus:result==0?@"Ready - last job completed":(result==CUPS_BACKEND_CANCEL?@"Canceled - check physical output":@"Job failed - check printer and log")];});
+            dispatch_sync(dispatch_get_main_queue(),^{[self recordStatus:result==0?@"Ready - last job completed":(result==CUPS_BACKEND_CANCEL?@"Canceled - check physical output":@"Job failed - check printer and log")];});
         }
         dispatch_sync(dispatch_get_main_queue(),^{self.printing=NO;});
         atomic_store(finished,true);dispatch_group_wait(monitor,DISPATCH_TIME_FOREVER);free(finished);
         uint32_t reply=htonl(result);write(fd,&reply,sizeof reply);close(fd);
     }}
-}
-- (void)openLog:(id)sender {
-    [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:[NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/RW403B/bridge.log"]]];
 }
 - (void)applicationWillTerminate:(NSNotification *)notification {
     RWCancelTransmission();

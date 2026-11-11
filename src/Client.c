@@ -76,6 +76,6 @@ int main(int argc,char **argv) {
     if(!received) {fputs("ERROR: Printer app disconnected or timed out; output may be partial. Review the printer before retrying.\n",stderr);return CUPS_BACKEND_HOLD;}
     unsigned result=ntohl(reply);
     if(result==0) fputs("INFO: Printer acknowledged all sections and reported completion\n",stderr);
-    else fputs("ERROR: RW403B app reported failure or cancellation; inspect its menu status and log before retrying\n",stderr);
+    else fputs("ERROR: RW403B app reported failure or cancellation; inspect its log before retrying\n",stderr);
     return result==0?CUPS_BACKEND_OK:(result==CUPS_BACKEND_CANCEL?CUPS_BACKEND_CANCEL:CUPS_BACKEND_HOLD);
 }

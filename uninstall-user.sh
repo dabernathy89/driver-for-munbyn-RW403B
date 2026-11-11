@@ -13,7 +13,7 @@ if [ -d "$app" ]; then
     if ! /usr/bin/pgrep -u "$user_id" -x rw403bbridge >/dev/null; then break; fi
     /bin/sleep 0.2
   done
-  if /usr/bin/pgrep -u "$user_id" -x rw403bbridge >/dev/null; then echo 'Quit RW403B Bluetooth from its menu before uninstalling.' >&2; exit 1; fi
+  if /usr/bin/pgrep -u "$user_id" -x rw403bbridge >/dev/null; then echo 'Stop rw403bbridge in Activity Monitor before uninstalling.' >&2; exit 1; fi
   /bin/rm -rf "$app"
 fi
 /bin/rm -f "$HOME/Library/Logs/RW403B/bridge.log" "$HOME/Library/Logs/RW403B/bridge.log.previous"

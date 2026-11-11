@@ -49,7 +49,7 @@ sh install-user.sh
 sudo /bin/sh install.sh
 ```
 
-Allow Bluetooth access for **RW403B Bluetooth** when prompted. Its menu-bar item should show **Ready**. The installer creates the CUPS queue `Munbyn_RW403B_BLE`, displayed as **MUNBYN RW403B Bluetooth**. It does not print a test job, change the default printer, or enable printer sharing.
+Allow Bluetooth access for **RW403B Bluetooth** when prompted. The helper runs in the background without a menu-bar item, Dock icon, or window. The installer creates the CUPS queue `Munbyn_RW403B_BLE`, displayed as **MUNBYN RW403B Bluetooth**. It does not print a test job, change the default printer, or enable printer sharing.
 
 The user installer opens the helper at login through a LaunchAgent. The launcher exits after opening the app; there is no KeepAlive daemon. The system installer checks the locally generated build manifest and refuses existing installation paths or a conflicting queue. These checks detect stale or accidentally changed build files; they are not an independent signature or security audit. Apps are locally ad-hoc signed, not notarized; rebuilding may prompt for Bluetooth permission again.
 
@@ -97,7 +97,7 @@ At 203 dpi, a 4 × 6-inch raster is 812 × 1218 dots. The BLE protocol uses whol
 | `/Library/Printers/PPDs/Contents/Resources/RW403BOpenSource.ppd` | Label sizes and raster settings |
 | `/Library/Printers/RW403BOpenSource/LICENSES.txt` | MIT and ISC notices |
 | `/Library/Printers/RW403BOpenSource/device-uri` | Private installation identity used during updates/removal |
-| `~/Applications/RW403B Bluetooth.app` | Native menu-bar helper |
+| `~/Applications/RW403B Bluetooth.app` | Native background helper |
 | `~/Library/LaunchAgents/org.local.rw403bbridge.plist` | Opens the helper at login |
 | `~/Library/Logs/RW403B/bridge.log` and `.previous` | Local diagnostics |
 | `/private/tmp/rw403b-<uid>/print.sock` | Private socket, recreated at helper startup |
@@ -130,7 +130,11 @@ These scripts remove the listed RW403B components and queue. Other printers and 
 
 ## Errors and cancellation
 
-Use **Open log** in the helper's menu for diagnostics. Check Bluetooth permission, label stock, cover position, printer power, and other printing apps. Review logs for identifying data before sharing them.
+Open the local diagnostic log with `open "$HOME/Library/Logs/RW403B/bridge.log"`. A successful startup records **Ready**.
+
+To check whether the helper is running, use `pgrep -u "$(id -u)" -x rw403bbridge` or search for `rw403bbridge` in Activity Monitor. To stop it, first finish or cancel queued jobs, then quit that process in Activity Monitor; reopen the app to start it again.
+
+Check Bluetooth permission, label stock, cover position, printer power, and other printing apps. Review logs for identifying data before sharing them.
 
 Failures after possible transmission are held for review, without automatic retry. Check the physical printer before resubmitting: a partial label may have printed or data may remain buffered. Canceling through Print Center signals the helper, but cannot retract bytes already transmitted. No factory reset, calibration, speed, density, or paper-setting commands are sent automatically.
 
