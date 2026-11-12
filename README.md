@@ -2,7 +2,7 @@
 
 Open-source CUPS backend and Bluetooth helper for printing to a MUNBYN RW403B from the normal macOS Print dialog. It sends a compressed bitmap protocol over Bluetooth LE; it does not require MUNBYN’s proprietary driver.
 
-**Status:** experimental, physically verified on one RW403B-N. A complete 4 × 6-inch PDF printed and its QR code scanned correctly. Removing trailing white raster rows eliminated an extra blank label. Compatibility with other firmware revisions is not established.
+**Status:** experimental, physically verified on one RW403B-N. Complete 4 × 6-inch and 2 × 1-inch PDFs printed and their QR codes scanned correctly. Removing trailing white raster rows eliminated an extra blank label. Compatibility with other firmware revisions is not established.
 
 Original project code is **MIT licensed**. The bundled [Heatshrink](https://github.com/atomicobject/heatshrink) codec retains its **ISC license**. No MUNBYN code or binaries are distributed.
 
@@ -57,9 +57,13 @@ The user installer opens the helper at login through a LaunchAgent. The launcher
 
 1. Keep **RW403B Bluetooth** running. Reopen `~/Applications/RW403B Bluetooth.app` if it was quit.
 2. Select **MUNBYN RW403B Bluetooth** in an application's Print dialog.
-3. Select **4 x 6 inches** for true 101.6 × 152.4 mm labels, or **100 x 150 mm** for that smaller stock.
+3. Select **2 x 1 inches**, **4 x 6 inches**, or **100 x 150 mm** to match the loaded stock. Width runs across the printhead; height runs along the feed direction.
 4. Use actual size / 100% scaling for a PDF already sized to the label.
 5. Check the physical result. A submitted job, accepted Bluetooth packets, and a correct printed label are separate outcomes.
+
+Custom paper sizes are enabled for widths of **40-104 mm** and feed lengths of **25.4-200 mm**. Enter the actual adhesive-label dimensions, excluding the gap, and use zero non-printable margins in the macOS custom-paper dialog. The image itself should retain normal content margins. A 2 x 1-inch page is 144 x 72 points and renders at 406 x 203 dots; it does not require rotating the paper to portrait.
+
+Versions before 0.3.0 declared fixed paper sizes and accepted only large-label rasters. A custom size selected in macOS could still arrive as the default 4 x 6 raster. Update both the helper and paper definitions, then close and reopen existing Print dialogs to refresh cached capabilities.
 
 An optional test PDF includes a border, QR code, Code 128 barcode, bottom marker, and a two-inch measuring line. Generating it needs ReportLab in a local virtual environment:
 
@@ -71,6 +75,15 @@ open build/test-label.pdf
 ```
 
 Print one copy on 4 × 6 stock. Confirm all four border edges and **BOTTOM** are visible, the QR code reads `RW403B-BLUETOOTH-4X6`, the marked line measures two inches, and no additional blank label is ejected. Multi-page/copy jobs, sleep/wake, cancellation during transmission, and printing at the extreme bottom edge still need physical testing. Use ordinary label margins.
+
+For the smaller acceptance label:
+
+```sh
+.venv/bin/python tests/make-2x1-label.py build/test-2x1.pdf
+open build/test-2x1.pdf
+```
+
+Print it at actual size with **2 x 1 inches** selected. Check the full border and **BOTTOM**, exactly one label, and a QR scan of `RW403B-2X1`. The preset and equivalent custom size are covered by offline CUPS raster checks. A job submitted through CUPS using the custom 2 x 1-inch size physically printed its complete border and bottom marker, its QR scan matched, and no extra blank label fed out. Other custom sizes have not been physically verified.
 
 ## Architecture
 
@@ -106,7 +119,7 @@ CUPS also stores the queue configuration and PPD. macOS manages the helper's Blu
 
 ## Update or remove
 
-First review or cancel unfinished jobs in this queue. For a source update with the same printer, account, and PPD:
+First review or cancel unfinished jobs in this queue. For a source update with the same printer and account:
 
 ```sh
 sh test.sh
@@ -115,9 +128,10 @@ sh make-manifest.sh
 sh uninstall-user.sh
 sh install-user.sh
 sudo /bin/sh update-backend.sh
+sudo /bin/sh update-paper.sh
 ```
 
-If the PPD, printer, or account changes, remove the installed system and user components before reconfiguring, rebuilding, and installing. Do not print while only one component has been updated.
+The paper update refreshes the existing queue without changing its device URI or enabling sharing. If the printer or account changes, remove the installed system and user components before reconfiguring, rebuilding, and installing. Do not print while only one component has been updated.
 
 To remove:
 

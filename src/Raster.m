@@ -39,13 +39,14 @@ NSArray<NSDictionary *> *RWReadRasterData(NSData *input,unsigned copies,NSString
     NSMutableArray *pages=[NSMutableArray new]; cups_page_header2_t h;
     while(cupsRasterReadHeader2(ras,&h)) {
         NSUInteger w=h.cupsWidth,height=h.cupsHeight,bits=h.cupsBitsPerPixel;
-        BOOL paper=((w>=798 && w<=800 && height>=1198 && height<=1200) ||
-                    (w>=811 && w<=813 && height>=1217 && height<=1219));
+        // PPD custom range: 40-104 mm across the head, 25.4-200 mm feed length.
+        // Allow the rounding used by macOS's 203 dpi rasterizer at each edge.
+        BOOL paper=(w>=319 && w<=832 && height>=202 && height<=1600);
         if(!paper || h.HWResolution[0]!=203 || h.HWResolution[1]!=203 ||
            h.cupsColorOrder!=CUPS_ORDER_CHUNKED || h.cupsNumColors!=1 ||
            !(h.cupsColorSpace==CUPS_CSPACE_K || h.cupsColorSpace==CUPS_CSPACE_W || h.cupsColorSpace==CUPS_CSPACE_SW) ||
            (bits!=1 && bits!=8) || h.cupsBitsPerColor!=bits || h.cupsBytesPerLine!=(w*bits+7)/8 || h.NumCopies>20) {
-            *error=[NSString stringWithFormat:@"Unsupported raster: %lux%lu, %u dpi, %lu bits, color space %u; use portrait 4 x 6 or 100 x 150 mm at 203 dpi",(unsigned long)w,(unsigned long)height,h.HWResolution[0],(unsigned long)bits,h.cupsColorSpace];break;
+            *error=[NSString stringWithFormat:@"Unsupported raster: %lux%lu, %u dpi, %lu bits, color space %u; use 40-104 mm width and 25.4-200 mm feed length at 203 dpi",(unsigned long)w,(unsigned long)height,h.HWResolution[0],(unsigned long)bits,h.cupsColorSpace];break;
         }
         NSUInteger stride=(w+7)/8;
         NSMutableData *pixels=[NSMutableData dataWithLength:stride*height];

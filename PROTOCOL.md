@@ -52,3 +52,9 @@ Static resources inspected from [MUNBYN’s web editor](https://editor.munbyn.co
 - The editor's Heatshrink library: ISC notice and compiled configuration constants. It was inspected, not bundled or executed as part of the solution.
 
 No vendor JavaScript, compiled codec, proprietary CUPS filter, or installer is bundled. Only the ISC-licensed upstream Heatshrink implementation is vendored.
+
+## Small labels and custom sizes
+
+The PPD offers a 2 x 1-inch preset and custom sizes from 40 to 104 mm wide and 25.4 to 200 mm long. The raster validator accepts their rounded 203 dpi dimensions; the encoder enforces a maximum of 1600 rows independently of width. These are driver limits.
+
+A 2 x 1-inch PDF converted through macOS's CUPS filters produces 406 x 203 pixels with either the preset or `PageSize=Custom.144x72`. Both paths produced the same monochrome test bitmap. Two white pixels pad the right edge to 408 dots / 51 bytes per row. As with larger labels, only trailing white rows are removed. This fixes the previous PPD's fixed-size fallback and the helper's large-label-only validation. The custom-size job was then physically verified on 2 x 1-inch stock: complete border and bottom marker, QR scan `RW403B-2X1`, and no additional blank label. Other custom dimensions remain unverified on hardware.

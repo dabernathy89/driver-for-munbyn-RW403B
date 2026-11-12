@@ -73,7 +73,7 @@ static NSData *compress(NSData *raw) {
     heatshrink_encoder_free(enc); return ok?out:nil;
 }
 NSArray<NSArray<NSData *> *> *RWEncode(NSData *pixels, NSUInteger rowBytes) {
-    if(rowBytes<40 || rowBytes>104 || !pixels.length || pixels.length%rowBytes || pixels.length>104*1600) return nil;
+    if(rowBytes<40 || rowBytes>104 || !pixels.length || pixels.length%rowBytes || pixels.length/rowBytes>1600) return nil;
     // Align sections to eight complete rows; this matches the verified device protocol.
     NSUInteger sectionBytes=8192-(8192%(rowBytes*8));
     NSUInteger count=(pixels.length+sectionBytes-1)/sectionBytes;

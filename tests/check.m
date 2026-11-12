@@ -4,6 +4,7 @@
 #import "Raster.h"
 #include "heatshrink_decoder.h"
 #include <cups/raster.h>
+#include <cups/ppd.h>
 #include <fcntl.h>
 #include <unistd.h>
 
@@ -44,10 +45,10 @@ static void checkWire(NSData *pixels,NSUInteger stride) {
     }
     REQUIRE([recovered isEqual:pixels]);
 }
-static NSString *fixture(NSString *dir,NSString *name,BOOL blackSpace,unsigned bits,unsigned pages,unsigned copies,unsigned width) {
+static NSString *fixture(NSString *dir,NSString *name,BOOL blackSpace,unsigned bits,unsigned pages,unsigned copies,unsigned width,unsigned height) {
     NSString *path=[dir stringByAppendingPathComponent:name];int fd=open(path.fileSystemRepresentation,O_WRONLY|O_CREAT|O_TRUNC,0600);REQUIRE(fd>=0);
     cups_raster_t *r=cupsRasterOpen(fd,CUPS_RASTER_WRITE);REQUIRE(r);
-    cups_page_header2_t h={0};h.HWResolution[0]=h.HWResolution[1]=203;h.cupsWidth=width;h.cupsHeight=1218;
+    cups_page_header2_t h={0};h.HWResolution[0]=h.HWResolution[1]=203;h.cupsWidth=width;h.cupsHeight=height;
     h.cupsBitsPerPixel=h.cupsBitsPerColor=bits;h.cupsNumColors=1;h.cupsColorOrder=CUPS_ORDER_CHUNKED;
     h.cupsColorSpace=blackSpace?CUPS_CSPACE_K:CUPS_CSPACE_SW;h.cupsBytesPerLine=(width*bits+7)/8;h.NumCopies=copies;
     for(unsigned page=0;page<pages;page++) {
@@ -68,23 +69,46 @@ static NSArray *readRaster(NSString *path,unsigned copies) {
     int fd=open(path.fileSystemRepresentation,O_RDONLY);REQUIRE(fd>=0);NSString *error=nil;
     NSArray *pages=RWReadRaster(fd,copies,&error);close(fd);return pages;
 }
+static void checkPageSize(const char *choice,unsigned width,unsigned height) {
+    ppd_file_t *ppd=ppdOpenFile("RW403B.ppd");REQUIRE(ppd);
+    ppdMarkDefaults(ppd);cups_option_t *options=NULL;
+    int count=cupsAddOption("PageSize",choice,0,&options);
+    REQUIRE(!cupsMarkOptions(ppd,count,options));
+    cups_page_header2_t h={0};
+    REQUIRE(!cupsRasterInterpretPPD(&h,ppd,count,options,NULL));
+    REQUIRE(h.cupsWidth==width && h.cupsHeight==height);
+    cupsFreeOptions(count,options);ppdClose(ppd);
+}
 int main(int argc,char **argv) {@autoreleasepool {
     REQUIRE(argc==2);NSString *dir=@(argv[1]);
     REQUIRE([NSFileManager.defaultManager createDirectoryAtPath:dir withIntermediateDirectories:YES attributes:nil error:nil]);
+    checkPageSize("Label2x1",406,203);
+    checkPageSize("Custom.144x72",406,203);
+    checkPageSize("Label4x6",812,1218);
     const uint8_t query[]={8,1},expected[]={0x55,2,0x40,0x5d,8,1};
     REQUIRE([RWFrame([NSData dataWithBytes:query length:2]) isEqual:[NSData dataWithBytes:expected length:6]]);
     const uint8_t bad[]={0x0a,0xff,0xff,0xff};REQUIRE(!RWFields([NSData dataWithBytes:bad length:4]));
-    NSString *one=fixture(dir,@"gray.ras",NO,8,1,1,812);
+    NSString *one=fixture(dir,@"gray.ras",NO,8,1,1,812,1218);
     NSArray *gray=readRaster(one,1);REQUIRE(gray.count==1);
     REQUIRE([gray[0][@"height"] unsignedLongValue]==87); // Last ink row, not physical stock height.
     REQUIRE([gray[0][@"pixels"] length]==102*87);
-    NSArray *black=readRaster(fixture(dir,@"black.ras",YES,1,1,1,812),1);REQUIRE(black.count==1);
+    NSArray *black=readRaster(fixture(dir,@"black.ras",YES,1,1,1,812,1218),1);REQUIRE(black.count==1);
     REQUIRE([gray[0][@"pixels"] isEqual:black[0][@"pixels"]]);
     const uint8_t *p=[gray[0][@"pixels"] bytes];REQUIRE(p[23*102+3]==1 && p[23*102+4]==255 && p[23*102+25]==0);
     REQUIRE(readRaster(one,2).count==2);
-    REQUIRE(readRaster(fixture(dir,@"copies.ras",NO,8,2,2,812),1).count==4);
-    REQUIRE(readRaster(fixture(dir,@"copies.ras",NO,8,2,2,812),2).count==4);
-    REQUIRE(!readRaster(fixture(dir,@"wrong-paper.ras",NO,8,1,1,100),1));
+    REQUIRE(readRaster(fixture(dir,@"copies.ras",NO,8,2,2,812,1218),1).count==4);
+    REQUIRE(readRaster(fixture(dir,@"copies.ras",NO,8,2,2,812,1218),2).count==4);
+    REQUIRE(!readRaster(fixture(dir,@"wrong-paper.ras",NO,8,1,1,100,1218),1));
+    NSArray *small=readRaster(fixture(dir,@"2x1.ras",NO,8,1,1,406,203),1);
+    REQUIRE(small.count==1 && [small[0][@"rowBytes"] unsignedLongValue]==51);
+    REQUIRE([small[0][@"height"] unsignedLongValue]==87);
+    checkWire(small[0][@"pixels"],51);
+    REQUIRE(readRaster(fixture(dir,@"min-paper.ras",NO,8,1,1,319,202),1).count==1);
+    REQUIRE(readRaster(fixture(dir,@"max-paper.ras",NO,8,1,1,832,1600),1).count==1);
+    REQUIRE(!readRaster(fixture(dir,@"too-wide.ras",NO,8,1,1,833,203),1));
+    REQUIRE(!readRaster(fixture(dir,@"too-short.ras",NO,8,1,1,406,201),1));
+    REQUIRE(!readRaster(fixture(dir,@"too-long.ras",NO,8,1,1,406,1601),1));
+    REQUIRE(!RWEncode([NSMutableData dataWithLength:51*1601],51));
     NSData *valid=[NSData dataWithContentsOfFile:one];NSString *truncated=[dir stringByAppendingPathComponent:@"truncated.ras"];
     REQUIRE([[valid subdataWithRange:NSMakeRange(0,valid.length-100)] writeToFile:truncated atomically:YES]);REQUIRE(!readRaster(truncated,1));
     NSMutableData *trailing=[valid mutableCopy];[trailing appendBytes:"abc" length:3];

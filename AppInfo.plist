@@ -6,8 +6,8 @@
 <key>CFBundleDisplayName</key><string>RW403B Bluetooth</string>
 <key>CFBundleExecutable</key><string>rw403bbridge</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleVersion</key><string>0.2.1</string>
-<key>CFBundleShortVersionString</key><string>0.2.1</string>
+<key>CFBundleVersion</key><string>0.3.0</string>
+<key>CFBundleShortVersionString</key><string>0.3.0</string>
 <key>LSUIElement</key><true/>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSBluetoothAlwaysUsageDescription</key><string>Send print jobs to your selected RW403B label printer.</string>

@@ -1,7 +1,7 @@
 *PPD-Adobe: "4.3"
 *% SPDX-License-Identifier: MIT
 *FormatVersion: "4.3"
-*FileVersion: "0.1.0"
+*FileVersion: "0.3.0"
 *LanguageEncoding: ISOLatin1
 *LanguageVersion: English
 *PCFileName: "RW403BLE.PPD"
@@ -17,7 +17,7 @@
 *FileSystem: False
 *Throughput: "1"
 *LandscapeOrientation: Plus90
-*VariablePaperSize: False
+*VariablePaperSize: True
 *TTRasterizer: Type42
 *cupsVersion: 2.3
 *cupsManualCopies: True
@@ -27,20 +27,32 @@
 *DefaultPageSize: Label4x6
 *PageSize Label4x6/4 x 6 inches: "<</PageSize[288 432]/ImagingBBox null>>setpagedevice"
 *PageSize Label100x150/100 x 150 mm: "<</PageSize[283.464567 425.196850]/ImagingBBox null>>setpagedevice"
+*PageSize Label2x1/2 x 1 inches: "<</PageSize[144 72]/ImagingBBox null>>setpagedevice"
 *CloseUI: *PageSize
 *OpenUI *PageRegion/Label size: PickOne
 *OrderDependency: 10 AnySetup *PageRegion
 *DefaultPageRegion: Label4x6
 *PageRegion Label4x6/4 x 6 inches: "<</PageSize[288 432]/ImagingBBox null>>setpagedevice"
 *PageRegion Label100x150/100 x 150 mm: "<</PageSize[283.464567 425.196850]/ImagingBBox null>>setpagedevice"
+*PageRegion Label2x1/2 x 1 inches: "<</PageSize[144 72]/ImagingBBox null>>setpagedevice"
 *CloseUI: *PageRegion
 *DefaultImageableArea: Label4x6
 *ImageableArea Label4x6: "0 0 288 432"
 *ImageableArea Label100x150: "0 0 283.464567 425.196850"
+*ImageableArea Label2x1: "0 0 144 72"
 *DefaultPaperDimension: Label4x6
 *PaperDimension Label4x6: "288 432"
 *PaperDimension Label100x150: "283.464567 425.196850"
+*PaperDimension Label2x1: "144 72"
 *HWMargins: 0 0 0 0
+*MaxMediaWidth: "294.803150"
+*MaxMediaHeight: "566.929134"
+*CustomPageSize True: "pop pop pop <</PageSize[5 -2 roll]/ImagingBBox null>>setpagedevice"
+*ParamCustomPageSize Width: 1 points 113.385827 294.803150
+*ParamCustomPageSize Height: 2 points 72 566.929134
+*ParamCustomPageSize WidthOffset: 3 points 0 0
+*ParamCustomPageSize HeightOffset: 4 points 0 0
+*ParamCustomPageSize Orientation: 5 int 0 0
 *OpenUI *Resolution/Resolution: PickOne
 *OrderDependency: 20 AnySetup *Resolution
 *DefaultResolution: 203dpi
